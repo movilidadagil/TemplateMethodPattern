@@ -1,0 +1,27 @@
+Yeni yazımızda 
+favoring composition over inheritance
+konusunu inceleyeceğiz.
+
+composition nedir?
+Template method pattern aşırı bir şekilde inheritance kullanmakta idi.
+burada inheritance ile ilgili problemleri tanımlayacağız
+Dependency inversion SOLI(D) i konuşacağız.
+Single responsibility 
+
+inheritance kullandığımız zaman alt sınıflar üst sınıfların bir çok metoduna erişebilir ve diyelim ki 
+PrintStream sınıfını inheritance edip bir sınıfta kullandınız, önceki örneğimizdeki template method pattern sınıfımız
+AbstractExporter da PrintStream i extent ettiğinizi düşünün, TxtExporter sınfıında da bu AbstractExporter ı zaten extend ediyordunuz ve out değişkeninizi artık doğrudan kullanabilir hale geldiniz çünkü bu out PrintStream den bir nesne idi bununla PrintStream den println() metodunu çağırıp format yazdırmıştık şimdi extend ettik gidelim
+Cli sınıfındaki şu satırı inceleyelim
+      
+    ExportType type = ExportType.values()[exportMenuChoice - 1];
+    Exporter exporter;
+ burada TxtExporter sınıfından bir nesne üretin ve hangi metotlara erişebiliyorsunuz bakın
+ göreceğiniz üzere PrintStream metodlarına da erişebileceksiniz ve kazara close() metodunu kullanıp
+ daha report extract olmadan evvel streami kapatabilirsinizz yani inheritance bu gibi yanlış kullanımlaseolabilir.
+Fakat bunun önüne geçmenin bir yolu vardır bu da AbstractExporter sınıfınızı package accessible yapmak yani
+	public abstract  class AbstractExporter implements IExporter  {
+ 		public i kaldırıp package access yapın.
+ 	abstract  class AbstractExporter implements IExporter  {
+
+Mesala java da ve diğer bir çok dilde birden fazla sınıf extend edemezsiniz bu yüzden de bizim örneğimizde PrintStream sınıfını extend ettik fakat Report sınıfından nesne üretip kullandık onu extend edemedik çünkü java izin vermiyor 
+bu yüzden de composition kullanmak gerekli.

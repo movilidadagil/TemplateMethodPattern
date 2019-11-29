@@ -1,0 +1,127 @@
+Template method pattern
+Template method pattern ın ne olduğunu öğreneceğiz.
+Code base imizin nerelerinde refaktör yapacağımızı gereksinimlerimize göre belirleyeceğiz.
+Code base imizi modifiye ederek gerekli export formatı implemente edeceğiz, sonuç olarak 
+	code reusability,
+	code extensibility,
+	code readability 
+kavramlarının anlamlarını daha iyi kafamızda oturtacağız.
+
+Template method pattern
+Bu pattern fikri eğer birden çok benzer fonksiyoneliteleri ve benzer adımları  implement eden fakat tamamen farklı işler yapan sınıflarınız varsa bu sınıflar arasında kod paylaşımı yapmaktan gelir.
+
+Birden çok benzer fonksiyoneliteye sahip sınıflarınız varsa
+herbiri farklı implementasyon içeren adımlar tanımlı ise
+Base class ı yada template class ı iskelet olarak kullanmak için herbir adımı ve kodu çıkarabiliyorsanız
+Base class ı ortak kullanmayı sağlayan spesifikasyonları alt sınıflara gönderebiliyorsanız
+template method pattern kullanabilirsiniz.
+
+Şimdi exporter örneğine dönersek
+Exporter sınıfımızı sadece csv export etmek için değil, başka tiplerde exportlar yapmak içinde kullanacağımızı varsayalım export stepleri aynı, fonksiyonellik benzer o zaman template i kullanalım 
+public abstract  class AbstractExporter {
+
+    private final Report report;
+    protected final PrintStream out;
+
+    AbstractExporter(Report report, PrintStream out) {
+        this.report = report;
+        this.out = out;
+    }
+}
+burada AbstractExporter sınıfımızın yapıcısı package accessible yani aynı paket altındaki sınıflar bu constructor a erişebilir ki zaten biz Exporter sınıfı ile aynı stepleri farklı şekilde implemente edecek sınıflarla iş yapacağız 
+o yüzden AbstractExporter sınıfımızın yapıcısı package accessible.
+sadece ihtiyaç duyan sınıfların erişimine izin vermek açısından tüm field ları package accessible yapmak mantıklı.
+
+  public final void export(){
+        beforeLabels();
+        handleLabels(report.getLabels());
+        afterLabels();
+        beforeRecords();
+        handleRecords();
+        afterRecords();
+    }
+
+    burada export metodumuzun final olması lazım bu da demek oluyor ki altsınıflar bu export metodunu override edemesin.
+    
+    yukarıdaki export metodundan çağırılan metotlardan bir tanesini ele alalım
+
+    protected void beforeLabels() {
+    }
+
+    Bunun abstract tanımlanmamasının sebebi alt sınıfları bunları implemente etmeye zorunlu kılmayı istememiz çünkü  bu metotları implemente etmeye ihtiyacı olmayacak.
+
+    protected abstract void handleLabels(List<String> labels);
+    Mesala bu metot abstract çünkü alt sınıflarımızın bu metodu implement etmelerini istiyoruz.
+
+    Template method pattern ının artıları ve eksileri
+
+    Artıları
+    	 super class tarafından sağlanan implementasyonlarla fonksiyoneliteyi genişletmek.
+    	 code duplication ı azaltmak,
+    	 reusing code
+
+    Eksileri
+    	maintain zor olabiliyor
+
+    Bu template pattern örneğimizde pattern ın code duplication ı azalttığını bi sınıf ekleyerek açıklayalım.
+    PdfExporter sınıfını ekleyelim.
+
+    public final class PdfExporter extends AbstractExporter {
+
+
+    PdfExporter(Report report, PrintStream out) {
+        super(report, out);
+    }
+
+    @Override
+    protected void handleLabels(PrintStream out, List<String> labels) {
+
+    }
+
+    @Override
+    protected void handleRecord(PrintStream out, List<String> record, boolean first, boolean last) {
+
+    }
+}
+
+pdf raporunda sütun genişliklerinin ne olduğunu hesaplayacak metoda ihtiyacımız var böyle bir metodumuz TxtExporter sınıfında zaten mevcut o zaman bu metodu refactoring edelim.
+metodun tamamını seçip sağ tuş yapıp refactor deyip pull members up seçeneğini seçelim.
+burada metodu abstract sınıfa taşımış olduk.
+artık TxtExporter sınfımızda bu metodun impelementasyonu yok.
+
+Evet peki dificult maintanence değinelim
+Eğer abstract sınıfınız birden çok template metoda sahip oldu ise burada maintanance zorlaşır.
+Tek problem bu mu değil limitli kemik adımlar yani limits singleton steps.
+diyelim ki json export etmek istediniz 
+JsonExport sınıfı yaratırsınız peki diğer sınıflarda kullanılan adımlardan hepsine ihtiyacınız var mı?
+tabi ki de yok.
+burada record ları handle etmeniz için gerekli implementasyonları template pattern sınıfınız sağlamaz gördüğünüz gibi 
+
+
+    @Override
+    protected void handleRecord(PrintStream out, List<String> record, boolean first, boolean last) {
+        out.println("\t{");
+        for (int i = 0; i < labels.size(); i++) {
+            String label = labels.get(i);
+            String field = record.get(i);
+            out.printf("\t\t\"%s\": ", label);
+            if (i == 0) {
+                // string field
+                out.printf("\"%s\",%n", field);
+            } else if (i == 1) {
+                // number field
+                out.printf("%s%n", field);
+            }
+        }
+        out.print("\t}");
+        if (!last) {
+            out.print(",");
+        }
+        out.println();
+    }
+
+tamamen farklı şeyler yazmanız gerekti. Peki bunu çözmek için ne yapabiliriz gördüğümüz gibi abstract template method sınıfımızı extend etmek işimize yaramaz o zaman Exporter sınıfını interface yaparız ve JsonExporter sınıfında bu interface i implement ederiz bu bize daha çok maintanence sağlar.
+
+böylece kendi export metodumuzu implement ederiz. Interface olarak Exporter ı değiştirdiğimizde template method sınıfımızında bu sınıfı implement etmesi gerekir.
+
+
